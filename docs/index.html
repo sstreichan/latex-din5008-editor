@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LaTeX DIN 5008 Brief Editor</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/dracula.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/stex/stex.min.js"></script>
+  <script src="wasm_exec.js"></script>
+</head>
+<body>
+
+  <header>
+    <div class="header-content">
+      <div>
+        <h1>&#x1F4C4; LaTeX DIN&nbsp;5008 Brief Editor</h1>
+        <p>Erstelle Briefe nach DIN&nbsp;5008 &mdash; Powered by Go WebAssembly</p>
+      </div>
+      <span id="wasmStatus" class="badge badge-loading">&#x23F3; Lade WASM&hellip;</span>
+    </div>
+  </header>
+
+  <div class="app-layout">
+
+    <!-- ── Form ──────────────────────────────────────── -->
+    <aside class="panel panel-form">
+      <h2>&#x270F;&#xFE0F; Briefdaten</h2>
+
+      <fieldset>
+        <legend>Absender</legend>
+        <label>Name
+          <input id="fromName" type="text" value="Max Mustermann">
+        </label>
+        <label>Stra&szlig;e &amp; Nr.
+          <input id="fromStreet" type="text" value="Musterstra&szlig;e 1">
+        </label>
+        <label>PLZ &amp; Ort
+          <input id="fromCity" type="text" value="12345 Musterstadt">
+        </label>
+        <label>Telefon
+          <input id="fromPhone" type="tel" value="+49 123 456789">
+        </label>
+        <label>E-Mail
+          <input id="fromEmail" type="email" value="max@beispiel.de">
+        </label>
+        <label>Ort <small>(f&uuml;r Datumszeile)</small>
+          <input id="place" type="text" value="Musterstadt">
+        </label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Empf&auml;nger</legend>
+        <label>Name / Firma
+          <input id="toName" type="text" value="Firma XYZ GmbH">
+        </label>
+        <label>Stra&szlig;e &amp; Nr.
+          <input id="toStreet" type="text" value="Zielstra&szlig;e 99">
+        </label>
+        <label>PLZ &amp; Ort
+          <input id="toCity" type="text" value="98765 Zielstadt">
+        </label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Briefinhalt</legend>
+        <label>Betreff
+          <input id="subject" type="text" value="Betreff: Wichtige Angelegenheit">
+        </label>
+        <label>Anrede
+          <input id="opening" type="text" value="Sehr geehrte Damen und Herren,">
+        </label>
+        <label>Brieftext
+          <textarea id="body" rows="5">ich wende mich heute mit einem Anliegen an Sie, das ich Ihnen im Folgenden n&auml;her erl&auml;utern m&ouml;chte.
+
+Ich bitte Sie, die oben genannte Angelegenheit zu pr&uuml;fen und mir Ihre R&uuml;ckmeldung zukommen zu lassen.</textarea>
+        </label>
+        <label>Gru&szlig;formel
+          <input id="closing" type="text" value="Mit freundlichen Gr&uuml;&szlig;en">
+        </label>
+        <label>Anlagen <small>(kommagetrennt, optional)</small>
+          <input id="encl" type="text" placeholder="z.B. Lebenslauf, Zeugnisse">
+        </label>
+      </fieldset>
+
+      <button id="btnGenerate" class="btn btn-secondary" onclick="handleGenerate()">
+        &#x2699;&#xFE0F; LaTeX generieren
+      </button>
+    </aside>
+
+    <!-- ── Editor ─────────────────────────────────────── -->
+    <section class="panel panel-editor">
+      <div class="panel-header">
+        <h2>&#x1F4DD; LaTeX Editor</h2>
+        <button id="btnCompile" class="btn btn-primary" onclick="handleCompile()">
+          &#x1F504; PDF kompilieren
+        </button>
+      </div>
+      <div class="editor-wrapper">
+        <textarea id="latexEditor"></textarea>
+      </div>
+      <div id="statusBar" class="status-bar"></div>
+    </section>
+
+    <!-- ── Preview ───────────────────────────────────── -->
+    <section class="panel panel-preview">
+      <div class="panel-header">
+        <h2>&#x1F4CB; PDF Vorschau</h2>
+        <a id="downloadLink" class="btn btn-outline" style="display:none" download="brief.pdf">
+          &#x2B07;&#xFE0F; Download
+        </a>
+      </div>
+      <div class="preview-container">
+        <div id="placeholder" class="placeholder">
+          <div class="placeholder-icon">&#x1F4C4;</div>
+          <p>Klicken Sie auf <strong>&bdquo;PDF kompilieren&ldquo;</strong>,<br>um die Vorschau zu erstellen.</p>
+          <p class="hint">Kompilierung via <a href="https://latex.ytotech.com" target="_blank">latex.ytotech.com</a><br>Tastenkombination: <kbd>Ctrl+Enter</kbd></p>
+        </div>
+        <iframe id="pdfPreview" title="PDF Vorschau"></iframe>
+      </div>
+    </section>
+
+  </div>
+
+  <script>
+    // ── CodeMirror ────────────────────────────────────────────────────────
+    window.editor = CodeMirror.fromTextArea(
+      document.getElementById('latexEditor'),
+      {
+        mode: 'stex',
+        theme: 'dracula',
+        lineNumbers: true,
+        lineWrapping: true,
+        autofocus: false,
+        extraKeys: { 'Ctrl-Enter': handleCompile },
+      }
+    );
+
+    // ── Go WASM ───────────────────────────────────────────────────────────
+    const go = new Go();
+    WebAssembly.instantiateStreaming(fetch('main.wasm'), go.importObject)
+      .then(result => {
+        go.run(result.instance);
+        setWasmStatus('ready');
+        setTimeout(handleGenerate, 150);
+      })
+      .catch(err => {
+        console.error('WASM error:', err);
+        setWasmStatus('error');
+        setStatus('Fehler beim Laden der WASM-Datei: ' + err.message, 'error');
+      });
+
+    // ── Event Listeners ───────────────────────────────────────────────────
+    document.querySelectorAll('aside input, aside textarea').forEach(el => {
+      el.addEventListener('input', debounce(handleGenerate, 400));
+    });
+
+    // ── Handlers ─────────────────────────────────────────────────────────
+    function handleGenerate() {
+      if (typeof goGenerateLaTeX === 'function') {
+        goGenerateLaTeX();
+        setStatus('LaTeX generiert \u2713', 'success');
+      } else {
+        setStatus('WASM noch nicht bereit \u2026', 'info');
+      }
+    }
+
+    async function handleCompile() {
+      const latex = typeof goGetEditorContent === 'function'
+        ? goGetEditorContent()
+        : window.editor.getValue();
+
+      if (!latex.trim()) {
+        setStatus('Kein LaTeX-Inhalt vorhanden.', 'error');
+        return;
+      }
+
+      setStatus('\u23F3 Kompiliere PDF\u2026', 'info');
+      const btn = document.getElementById('btnCompile');
+      btn.disabled = true;
+
+      try {
+        const res = await fetch('https://latex.ytotech.com/builds/sync', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            compiler: 'pdflatex',
+            resources: [{ main: true, content: latex }],
+          }),
+        });
+
+        if (!res.ok) {
+          const txt = await res.text();
+          throw new Error('API ' + res.status + ': ' + txt.substring(0, 300));
+        }
+
+        const blob = await res.blob();
+        const url  = URL.createObjectURL(blob);
+
+        const iframe      = document.getElementById('pdfPreview');
+        const placeholder = document.getElementById('placeholder');
+        const dlLink      = document.getElementById('downloadLink');
+
+        iframe.src              = url;
+        iframe.style.display    = 'block';
+        placeholder.style.display = 'none';
+        dlLink.href             = url;
+        dlLink.style.display    = 'inline-flex';
+
+        setStatus('\u2705 PDF erfolgreich kompiliert', 'success');
+      } catch (err) {
+        setStatus('\u274C Fehler: ' + err.message, 'error');
+        console.error(err);
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    // ── Helpers ───────────────────────────────────────────────────────────
+    function setStatus(msg, type) {
+      const bar   = document.getElementById('statusBar');
+      bar.textContent = msg;
+      bar.className   = 'status-bar status-' + type;
+    }
+
+    function setWasmStatus(state) {
+      const el  = document.getElementById('wasmStatus');
+      const map = {
+        loading: ['\u23F3 Lade WASM\u2026', 'badge-loading'],
+        ready:   ['\u2705 WASM bereit',      'badge-ready'],
+        error:   ['\u274C WASM Fehler',       'badge-error'],
+      };
+      const [text, cls] = map[state] || map.loading;
+      el.textContent = text;
+      el.className   = 'badge ' + cls;
+    }
+
+    function debounce(fn, ms) {
+      let t;
+      return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); };
+    }
+  </script>
+</body>
+</html>
