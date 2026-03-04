@@ -17,15 +17,18 @@
     <div class="header-content">
       <div>
         <h1>&#x1F4C4; LaTeX DIN&nbsp;5008 Brief Editor</h1>
-        <p>Erstelle Briefe nach DIN&nbsp;5008 &mdash; Powered by Go WebAssembly</p>
+        <p>Erstelle Briefe nach DIN&nbsp;5008 &mdash; 100% lokal im Browser</p>
       </div>
-      <span id="wasmStatus" class="badge badge-loading">&#x23F3; Lade WASM&hellip;</span>
+      <div class="badges">
+        <span id="wasmStatus" class="badge badge-loading">&#x23F3; Lade Go WASM&hellip;</span>
+        <span id="latexStatus" class="badge badge-loading">&#x23F3; Lade LaTeX&hellip;</span>
+      </div>
     </div>
   </header>
 
   <div class="app-layout">
 
-    <!-- ── Form ──────────────────────────────────────── -->
+    <!-- ── Form ──────────────────────────────────────────────────────────────── -->
     <aside class="panel panel-form">
       <h2>&#x270F;&#xFE0F; Briefdaten</h2>
 
@@ -90,11 +93,11 @@ Ich bitte Sie, die oben genannte Angelegenheit zu pr&uuml;fen und mir Ihre R&uum
       </button>
     </aside>
 
-    <!-- ── Editor ─────────────────────────────────────── -->
+    <!-- ── Editor ───────────────────────────────────────────────────────────── -->
     <section class="panel panel-editor">
       <div class="panel-header">
         <h2>&#x1F4DD; LaTeX Editor</h2>
-        <button id="btnCompile" class="btn btn-primary" onclick="handleCompile()">
+        <button id="btnCompile" class="btn btn-primary" onclick="handleCompile()" disabled>
           &#x1F504; PDF kompilieren
         </button>
       </div>
@@ -104,7 +107,7 @@ Ich bitte Sie, die oben genannte Angelegenheit zu pr&uuml;fen und mir Ihre R&uum
       <div id="statusBar" class="status-bar"></div>
     </section>
 
-    <!-- ── Preview ───────────────────────────────────── -->
+    <!-- ── Preview ──────────────────────────────────────────────────────────── -->
     <section class="panel panel-preview">
       <div class="panel-header">
         <h2>&#x1F4CB; PDF Vorschau</h2>
@@ -116,7 +119,7 @@ Ich bitte Sie, die oben genannte Angelegenheit zu pr&uuml;fen und mir Ihre R&uum
         <div id="placeholder" class="placeholder">
           <div class="placeholder-icon">&#x1F4C4;</div>
           <p>Klicken Sie auf <strong>&bdquo;PDF kompilieren&ldquo;</strong>,<br>um die Vorschau zu erstellen.</p>
-          <p class="hint">Kompilierung via <a href="https://latex.ytotech.com" target="_blank">latex.ytotech.com</a><br>Tastenkombination: <kbd>Ctrl+Enter</kbd></p>
+          <p class="hint">100% lokal via SwiftLaTeX WebAssembly<br>Tastenkombination: <kbd>Ctrl+Enter</kbd></p>
         </div>
         <iframe id="pdfPreview" title="PDF Vorschau"></iframe>
       </div>
@@ -124,8 +127,14 @@ Ich bitte Sie, die oben genannte Angelegenheit zu pr&uuml;fen und mir Ihre R&uum
 
   </div>
 
+  <!-- SwiftLaTeX Engine -->
+  <script src="https://cdn.jsdelivr.net/npm/swiftlatex@1.5.1/PdfTeXEngine.js"></script>
+
   <script>
-    // ── CodeMirror ────────────────────────────────────────────────────────
+    // ── Globals ──────────────────────────────────────────────────────────────────────────────────────────────────────────────
+    let latexEngine = null;
+
+    // ── CodeMirror ───────────────────────────────────────────────────────────────────────────────────────────────────────────
     window.editor = CodeMirror.fromTextArea(
       document.getElementById('latexEditor'),
       {
@@ -138,7 +147,7 @@ Ich bitte Sie, die oben genannte Angelegenheit zu pr&uuml;fen und mir Ihre R&uum
       }
     );
 
-    // ── Go WASM ───────────────────────────────────────────────────────────
+    // ── Go WASM ──────────────────────────────────────────────────────────────────────────────────────────────────────────────
     const go = new Go();
     WebAssembly.instantiateStreaming(fetch('main.wasm'), go.importObject)
       .then(result => {
@@ -149,25 +158,52 @@ Ich bitte Sie, die oben genannte Angelegenheit zu pr&uuml;fen und mir Ihre R&uum
       .catch(err => {
         console.error('WASM error:', err);
         setWasmStatus('error');
-        setStatus('Fehler beim Laden der WASM-Datei: ' + err.message, 'error');
+        setStatus('Fehler beim Laden der Go WASM-Datei: ' + err.message, 'error');
       });
 
-    // ── Event Listeners ───────────────────────────────────────────────────
+    // ── SwiftLaTeX Engine ────────────────────────────────────────────────────────────────────────────────────────────────────
+    async function initLaTeXEngine() {
+      try {
+        latexEngine = new window.PdftexEngine();
+        await latexEngine.loadEngine();
+        setLatexStatus('ready');
+        document.getElementById('btnCompile').disabled = false;
+        setStatus('✅ LaTeX-Engine bereit', 'success');
+      } catch (err) {
+        console.error('LaTeX engine error:', err);
+        setLatexStatus('error');
+        setStatus('❌ Fehler beim Laden der LaTeX-Engine: ' + err.message, 'error');
+      }
+    }
+
+    // Start loading LaTeX engine
+    if (typeof window.PdftexEngine !== 'undefined') {
+      initLaTeXEngine();
+    } else {
+      window.addEventListener('load', initLaTeXEngine);
+    }
+
+    // ── Event Listeners ──────────────────────────────────────────────────────────────────────────────────────────────────────
     document.querySelectorAll('aside input, aside textarea').forEach(el => {
       el.addEventListener('input', debounce(handleGenerate, 400));
     });
 
-    // ── Handlers ─────────────────────────────────────────────────────────
+    // ── Handlers ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
     function handleGenerate() {
       if (typeof goGenerateLaTeX === 'function') {
         goGenerateLaTeX();
-        setStatus('LaTeX generiert \u2713', 'success');
+        setStatus('LaTeX generiert ✓', 'success');
       } else {
-        setStatus('WASM noch nicht bereit \u2026', 'info');
+        setStatus('Go WASM noch nicht bereit …', 'info');
       }
     }
 
     async function handleCompile() {
+      if (!latexEngine || !latexEngine.isReady()) {
+        setStatus('⏳ LaTeX-Engine lädt noch…', 'info');
+        return;
+      }
+
       const latex = typeof goGetEditorContent === 'function'
         ? goGetEditorContent()
         : window.editor.getValue();
@@ -177,27 +213,26 @@ Ich bitte Sie, die oben genannte Angelegenheit zu pr&uuml;fen und mir Ihre R&uum
         return;
       }
 
-      setStatus('\u23F3 Kompiliere PDF\u2026', 'info');
+      setStatus('⏳ Kompiliere PDF…', 'info');
       const btn = document.getElementById('btnCompile');
       btn.disabled = true;
 
       try {
-        const res = await fetch('https://latex.ytotech.com/builds/sync', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            compiler: 'pdflatex',
-            resources: [{ main: true, content: latex }],
-          }),
-        });
+        // Write LaTeX file
+        latexEngine.writeMemFSFile('main.tex', latex);
+        latexEngine.setEngineMainFile('main.tex');
 
-        if (!res.ok) {
-          const txt = await res.text();
-          throw new Error('API ' + res.status + ': ' + txt.substring(0, 300));
+        // Compile
+        const result = await latexEngine.compileLaTeX();
+
+        if (result.status !== 0) {
+          const log = result.log || 'Unbekannter Fehler';
+          throw new Error('Kompilierung fehlgeschlagen:\n' + log.substring(0, 500));
         }
 
-        const blob = await res.blob();
-        const url  = URL.createObjectURL(blob);
+        // Get PDF
+        const pdfBlob = new Blob([result.pdf], { type: 'application/pdf' });
+        const url = URL.createObjectURL(pdfBlob);
 
         const iframe      = document.getElementById('pdfPreview');
         const placeholder = document.getElementById('placeholder');
@@ -209,16 +244,19 @@ Ich bitte Sie, die oben genannte Angelegenheit zu pr&uuml;fen und mir Ihre R&uum
         dlLink.href             = url;
         dlLink.style.display    = 'inline-flex';
 
-        setStatus('\u2705 PDF erfolgreich kompiliert', 'success');
+        setStatus('✅ PDF erfolgreich kompiliert (100% lokal)', 'success');
+
+        // Cleanup
+        latexEngine.flushCache();
       } catch (err) {
-        setStatus('\u274C Fehler: ' + err.message, 'error');
-        console.error(err);
+        setStatus('❌ Fehler: ' + err.message, 'error');
+        console.error('Compilation error:', err);
       } finally {
         btn.disabled = false;
       }
     }
 
-    // ── Helpers ───────────────────────────────────────────────────────────
+    // ── Helpers ──────────────────────────────────────────────────────────────────────────────────────────────────────────────
     function setStatus(msg, type) {
       const bar   = document.getElementById('statusBar');
       bar.textContent = msg;
@@ -228,9 +266,21 @@ Ich bitte Sie, die oben genannte Angelegenheit zu pr&uuml;fen und mir Ihre R&uum
     function setWasmStatus(state) {
       const el  = document.getElementById('wasmStatus');
       const map = {
-        loading: ['\u23F3 Lade WASM\u2026', 'badge-loading'],
-        ready:   ['\u2705 WASM bereit',      'badge-ready'],
-        error:   ['\u274C WASM Fehler',       'badge-error'],
+        loading: ['⏳ Lade Go WASM…', 'badge-loading'],
+        ready:   ['✅ Go bereit',      'badge-ready'],
+        error:   ['❌ Go Fehler',       'badge-error'],
+      };
+      const [text, cls] = map[state] || map.loading;
+      el.textContent = text;
+      el.className   = 'badge ' + cls;
+    }
+
+    function setLatexStatus(state) {
+      const el  = document.getElementById('latexStatus');
+      const map = {
+        loading: ['⏳ Lade LaTeX…', 'badge-loading'],
+        ready:   ['✅ LaTeX bereit',  'badge-ready'],
+        error:   ['❌ LaTeX Fehler',   'badge-error'],
       };
       const [text, cls] = map[state] || map.loading;
       el.textContent = text;
