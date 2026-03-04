@@ -17,11 +17,10 @@
     <div class="header-content">
       <div>
         <h1>&#x1F4C4; LaTeX DIN&nbsp;5008 Brief Editor</h1>
-        <p>Erstelle Briefe nach DIN&nbsp;5008 &mdash; 100% lokal im Browser</p>
+        <p>Erstelle Briefe nach DIN&nbsp;5008 &mdash; Go WebAssembly + LaTeX</p>
       </div>
       <div class="badges">
-        <span id="wasmStatus" class="badge badge-loading">&#x23F3; Lade Go WASM&hellip;</span>
-        <span id="latexStatus" class="badge badge-loading">&#x23F3; Lade LaTeX&hellip;</span>
+        <span id="wasmStatus" class="badge badge-loading">&#x23F3; Lade WASM&hellip;</span>
       </div>
     </div>
   </header>
@@ -91,50 +90,74 @@ Ich bitte Sie, die oben genannte Angelegenheit zu pr&uuml;fen und mir Ihre R&uum
       <button id="btnGenerate" class="btn btn-secondary" onclick="handleGenerate()">
         &#x2699;&#xFE0F; LaTeX generieren
       </button>
+      
+      <button id="btnDownloadTex" class="btn btn-outline" onclick="handleDownloadTex()" style="margin-top: 0.5rem">
+        &#x1F4BE; .tex downloaden
+      </button>
     </aside>
 
     <!-- ── Editor ───────────────────────────────────────────────────────────── -->
     <section class="panel panel-editor">
       <div class="panel-header">
         <h2>&#x1F4DD; LaTeX Editor</h2>
-        <button id="btnCompile" class="btn btn-primary" onclick="handleCompile()" disabled>
-          &#x1F504; PDF kompilieren
-        </button>
       </div>
       <div class="editor-wrapper">
         <textarea id="latexEditor"></textarea>
       </div>
-      <div id="statusBar" class="status-bar"></div>
+      <div id="statusBar" class="status-bar">Bereit. LaTeX-Code kann mit lokalem Compiler kompiliert werden.</div>
     </section>
 
-    <!-- ── Preview ──────────────────────────────────────────────────────────── -->
+    <!-- ── Instructions ──────────────────────────────────────────────────────────── -->
     <section class="panel panel-preview">
       <div class="panel-header">
-        <h2>&#x1F4CB; PDF Vorschau</h2>
-        <a id="downloadLink" class="btn btn-outline" style="display:none" download="brief.pdf">
-          &#x2B07;&#xFE0F; Download
-        </a>
+        <h2>&#x1F4CB; LaTeX kompilieren</h2>
       </div>
-      <div class="preview-container">
-        <div id="placeholder" class="placeholder">
-          <div class="placeholder-icon">&#x1F4C4;</div>
-          <p>Klicken Sie auf <strong>&bdquo;PDF kompilieren&ldquo;</strong>,<br>um die Vorschau zu erstellen.</p>
-          <p class="hint">100% lokal via SwiftLaTeX WebAssembly<br>Tastenkombination: <kbd>Ctrl+Enter</kbd></p>
+      <div class="instructions-container">
+        <div class="instructions">
+          <div class="instruction-icon">&#x1F4E6;</div>
+          <h3>Lokal kompilieren</h3>
+          <p>Klicken Sie auf <strong>&bdquo;.tex downloaden&ldquo;</strong>, um die LaTeX-Datei herunterzuladen.</p>
+          
+          <div class="instruction-section">
+            <h4>&#x1F4BB; Option 1: Lokaler Compiler</h4>
+            <p>Kompilieren Sie mit Ihrer lokalen LaTeX-Installation:</p>
+            <pre><code>pdflatex brief.tex</code></pre>
+            <p class="hint">Voraussetzung: TeX Live, MiKTeX oder MacTeX</p>
+          </div>
+
+          <div class="instruction-section">
+            <h4>&#x1F310; Option 2: Online-Dienste</h4>
+            <p>Laden Sie die .tex-Datei in einen dieser Dienste hoch:</p>
+            <ul>
+              <li><a href="https://www.overleaf.com" target="_blank" rel="noopener">Overleaf</a> (kostenlos, Account erforderlich)</li>
+              <li><a href="https://papeeria.com" target="_blank" rel="noopener">Papeeria</a> (kostenlos)</li>
+              <li><a href="https://latexbase.com" target="_blank" rel="noopener">LaTeX Base</a> (kein Account)</li>
+            </ul>
+          </div>
+
+          <div class="instruction-section">
+            <h4>&#x1F680; Option 3: Cloud-Compiler API</h4>
+            <p>Verwenden Sie einen dieser kostenlosen APIs:</p>
+            <ul>
+              <li><a href="https://latex.ytotech.com" target="_blank" rel="noopener">latex.ytotech.com</a></li>
+              <li><a href="https://latexonline.cc" target="_blank" rel="noopener">LaTeX.Online</a></li>
+            </ul>
+            <p class="hint">Diese erfordern keine Installation, senden aber Daten an externe Server.</p>
+          </div>
+
+          <div class="note">
+            <strong>&#x26A0;&#xFE0F; Hinweis:</strong> Eine vollständig browser-basierte Lösung ohne externe Dienste ist technisch möglich
+            (via SwiftLaTeX WebAssembly), aber die CDN-Distribution ist aktuell nicht zuverlässig verfügbar.
+            Für maximale Datensouveränität verwenden Sie bitte einen lokalen Compiler.
+          </div>
         </div>
-        <iframe id="pdfPreview" title="PDF Vorschau"></iframe>
       </div>
     </section>
 
   </div>
 
-  <!-- SwiftLaTeX Engine -->
-  <script src="https://cdn.jsdelivr.net/npm/swiftlatex@1.5.1/PdfTeXEngine.js"></script>
-
   <script>
-    // ── Globals ──────────────────────────────────────────────────────────────────────────────────────────────────────────────
-    let latexEngine = null;
-
-    // ── CodeMirror ───────────────────────────────────────────────────────────────────────────────────────────────────────────
+    // ── CodeMirror ──────────────────────────────────────────────────────────────────────────────────────────────────────────────
     window.editor = CodeMirror.fromTextArea(
       document.getElementById('latexEditor'),
       {
@@ -143,7 +166,6 @@ Ich bitte Sie, die oben genannte Angelegenheit zu pr&uuml;fen und mir Ihre R&uum
         lineNumbers: true,
         lineWrapping: true,
         autofocus: false,
-        extraKeys: { 'Ctrl-Enter': handleCompile },
       }
     );
 
@@ -161,28 +183,6 @@ Ich bitte Sie, die oben genannte Angelegenheit zu pr&uuml;fen und mir Ihre R&uum
         setStatus('Fehler beim Laden der Go WASM-Datei: ' + err.message, 'error');
       });
 
-    // ── SwiftLaTeX Engine ────────────────────────────────────────────────────────────────────────────────────────────────────
-    async function initLaTeXEngine() {
-      try {
-        latexEngine = new window.PdftexEngine();
-        await latexEngine.loadEngine();
-        setLatexStatus('ready');
-        document.getElementById('btnCompile').disabled = false;
-        setStatus('✅ LaTeX-Engine bereit', 'success');
-      } catch (err) {
-        console.error('LaTeX engine error:', err);
-        setLatexStatus('error');
-        setStatus('❌ Fehler beim Laden der LaTeX-Engine: ' + err.message, 'error');
-      }
-    }
-
-    // Start loading LaTeX engine
-    if (typeof window.PdftexEngine !== 'undefined') {
-      initLaTeXEngine();
-    } else {
-      window.addEventListener('load', initLaTeXEngine);
-    }
-
     // ── Event Listeners ──────────────────────────────────────────────────────────────────────────────────────────────────────
     document.querySelectorAll('aside input, aside textarea').forEach(el => {
       el.addEventListener('input', debounce(handleGenerate, 400));
@@ -198,12 +198,7 @@ Ich bitte Sie, die oben genannte Angelegenheit zu pr&uuml;fen und mir Ihre R&uum
       }
     }
 
-    async function handleCompile() {
-      if (!latexEngine || !latexEngine.isReady()) {
-        setStatus('⏳ LaTeX-Engine lädt noch…', 'info');
-        return;
-      }
-
+    function handleDownloadTex() {
       const latex = typeof goGetEditorContent === 'function'
         ? goGetEditorContent()
         : window.editor.getValue();
@@ -213,47 +208,14 @@ Ich bitte Sie, die oben genannte Angelegenheit zu pr&uuml;fen und mir Ihre R&uum
         return;
       }
 
-      setStatus('⏳ Kompiliere PDF…', 'info');
-      const btn = document.getElementById('btnCompile');
-      btn.disabled = true;
-
-      try {
-        // Write LaTeX file
-        latexEngine.writeMemFSFile('main.tex', latex);
-        latexEngine.setEngineMainFile('main.tex');
-
-        // Compile
-        const result = await latexEngine.compileLaTeX();
-
-        if (result.status !== 0) {
-          const log = result.log || 'Unbekannter Fehler';
-          throw new Error('Kompilierung fehlgeschlagen:\n' + log.substring(0, 500));
-        }
-
-        // Get PDF
-        const pdfBlob = new Blob([result.pdf], { type: 'application/pdf' });
-        const url = URL.createObjectURL(pdfBlob);
-
-        const iframe      = document.getElementById('pdfPreview');
-        const placeholder = document.getElementById('placeholder');
-        const dlLink      = document.getElementById('downloadLink');
-
-        iframe.src              = url;
-        iframe.style.display    = 'block';
-        placeholder.style.display = 'none';
-        dlLink.href             = url;
-        dlLink.style.display    = 'inline-flex';
-
-        setStatus('✅ PDF erfolgreich kompiliert (100% lokal)', 'success');
-
-        // Cleanup
-        latexEngine.flushCache();
-      } catch (err) {
-        setStatus('❌ Fehler: ' + err.message, 'error');
-        console.error('Compilation error:', err);
-      } finally {
-        btn.disabled = false;
-      }
+      const blob = new Blob([latex], { type: 'text/plain;charset=utf-8' });
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href     = url;
+      a.download = 'brief.tex';
+      a.click();
+      URL.revokeObjectURL(url);
+      setStatus('✅ brief.tex heruntergeladen', 'success');
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -266,21 +228,9 @@ Ich bitte Sie, die oben genannte Angelegenheit zu pr&uuml;fen und mir Ihre R&uum
     function setWasmStatus(state) {
       const el  = document.getElementById('wasmStatus');
       const map = {
-        loading: ['⏳ Lade Go WASM…', 'badge-loading'],
-        ready:   ['✅ Go bereit',      'badge-ready'],
-        error:   ['❌ Go Fehler',       'badge-error'],
-      };
-      const [text, cls] = map[state] || map.loading;
-      el.textContent = text;
-      el.className   = 'badge ' + cls;
-    }
-
-    function setLatexStatus(state) {
-      const el  = document.getElementById('latexStatus');
-      const map = {
-        loading: ['⏳ Lade LaTeX…', 'badge-loading'],
-        ready:   ['✅ LaTeX bereit',  'badge-ready'],
-        error:   ['❌ LaTeX Fehler',   'badge-error'],
+        loading: ['⏳ Lade WASM…', 'badge-loading'],
+        ready:   ['✅ WASM bereit',  'badge-ready'],
+        error:   ['❌ WASM Fehler',   'badge-error'],
       };
       const [text, cls] = map[state] || map.loading;
       el.textContent = text;

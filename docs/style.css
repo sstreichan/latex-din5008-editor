@@ -1,4 +1,4 @@
-/* ── Reset ───────────────────────────────────────────────────────────────────────────────────────────────────────── */
+/* ── Reset ─────────────────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
@@ -27,7 +27,7 @@ html, body {
   overflow: hidden;
 }
 
-/* ── Header ──────────────────────────────────────────────────────────────────────────────────────────────────────── */
+/* ── Header ──────────────────────────────────────────────────────────────── */
 header {
   position: fixed;
   top: 0; left: 0; right: 0;
@@ -53,7 +53,7 @@ header p  { font-size: 0.72rem; color: var(--text-muted); }
   gap: 0.5rem;
 }
 
-/* ── Badge ───────────────────────────────────────────────────────────────────────────────────────────────────────── */
+/* ── Badge ───────────────────────────────────────────────────────────────── */
 .badge {
   font-size: 0.72rem;
   padding: 0.2rem 0.6rem;
@@ -65,7 +65,7 @@ header p  { font-size: 0.72rem; color: var(--text-muted); }
 .badge-ready   { background: #14532d; color: var(--success); }
 .badge-error   { background: #7f1d1d; color: var(--error); }
 
-/* ── Layout ──────────────────────────────────────────────────────────────────────────────────────────────────────── */
+/* ── Layout ──────────────────────────────────────────────────────────────── */
 .app-layout {
   display: grid;
   grid-template-columns: 270px 1fr 1fr;
@@ -74,7 +74,7 @@ header p  { font-size: 0.72rem; color: var(--text-muted); }
   overflow: hidden;
 }
 
-/* ── Panels ──────────────────────────────────────────────────────────────────────────────────────────────────────── */
+/* ── Panels ──────────────────────────────────────────────────────────────── */
 .panel {
   display: flex;
   flex-direction: column;
@@ -101,7 +101,7 @@ header p  { font-size: 0.72rem; color: var(--text-muted); }
   flex-shrink: 0;
 }
 
-/* ── Form Panel ──────────────────────────────────────────────────────────────────────────────────────────────────── */
+/* ── Form Panel ──────────────────────────────────────────────────────────── */
 .panel-form {
   background: var(--surface);
   overflow-y: auto;
@@ -157,10 +157,11 @@ input:focus, textarea:focus {
   border-color: var(--accent);
 }
 
-/* ── Buttons ─────────────────────────────────────────────────────────────────────────────────────────────────────── */
+/* ── Buttons ─────────────────────────────────────────────────────────────── */
 .btn {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 0.3rem;
   padding: 0.4rem 0.9rem;
   border-radius: 6px;
@@ -182,8 +183,6 @@ input:focus, textarea:focus {
   color: var(--text);
   border: 1px solid var(--border);
   width: 100%;
-  justify-content: center;
-  margin-top: 0.4rem;
 }
 .btn-secondary:hover:not(:disabled) { background: var(--border); }
 
@@ -191,10 +190,11 @@ input:focus, textarea:focus {
   background: transparent;
   color: var(--accent);
   border: 1px solid var(--accent);
+  width: 100%;
 }
 .btn-outline:hover { background: var(--accent); color: #fff; }
 
-/* ── Editor Panel ────────────────────────────────────────────────────────────────────────────────────────────────── */
+/* ── Editor Panel ────────────────────────────────────────────────────────── */
 .panel-editor { background: #282a36; }
 
 .editor-wrapper {
@@ -211,7 +211,7 @@ input:focus, textarea:focus {
   font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
 }
 
-/* ── Status Bar ──────────────────────────────────────────────────────────────────────────────────────────────────── */
+/* ── Status Bar ──────────────────────────────────────────────────────────── */
 .status-bar {
   padding: 0.3rem 1rem;
   font-size: 0.72rem;
@@ -226,60 +226,133 @@ input:focus, textarea:focus {
 .status-error   { color: var(--error); }
 .status-info    { color: var(--info); }
 
-/* ── Preview Panel ───────────────────────────────────────────────────────────────────────────────────────────────── */
+/* ── Instructions Panel ───────────────────────────────────────────────────────── */
 .panel-preview { background: var(--surface); }
 
-.preview-container {
+.instructions-container {
   flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  min-height: 0;
+  overflow-y: auto;
+  padding: 1.5rem;
 }
 
-#pdfPreview {
-  flex: 1;
-  width: 100%;
-  border: none;
-  display: none;
-  background: #fff;
+.instructions {
+  max-width: 600px;
+  margin: 0 auto;
 }
 
-.placeholder {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.75rem;
-  color: var(--text-muted);
+.instruction-icon {
+  font-size: 3rem;
   text-align: center;
-  padding: 2rem;
+  margin-bottom: 1rem;
+  opacity: 0.6;
 }
-.placeholder-icon { font-size: 3rem; opacity: 0.4; }
-.placeholder p    { font-size: 0.82rem; line-height: 1.6; }
-.placeholder .hint {
-  font-size: 0.72rem;
-  opacity: 0.55;
-  margin-top: 0.25rem;
+
+.instructions h3 {
+  font-size: 1.25rem;
+  margin-bottom: 0.75rem;
+  color: var(--text);
 }
-.placeholder a    { color: var(--accent); }
-kbd {
+
+.instructions h4 {
+  font-size: 0.95rem;
+  margin-top: 1.25rem;
+  margin-bottom: 0.5rem;
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.instructions p {
+  font-size: 0.85rem;
+  line-height: 1.6;
+  color: var(--text-muted);
+  margin-bottom: 0.5rem;
+}
+
+.instruction-section {
   background: var(--surface2);
   border: 1px solid var(--border);
-  border-radius: 4px;
-  padding: 0.1rem 0.35rem;
-  font-size: 0.7rem;
-  font-family: monospace;
+  border-radius: var(--radius);
+  padding: 1rem;
+  margin-bottom: 1rem;
 }
 
-/* ── Scrollbar ───────────────────────────────────────────────────────────────────────────────────────────────────── */
+.instructions pre {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.6rem 0.8rem;
+  margin: 0.5rem 0;
+  overflow-x: auto;
+}
+
+.instructions code {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 0.8rem;
+  color: var(--accent);
+}
+
+.instructions ul {
+  list-style: none;
+  padding-left: 0;
+  margin: 0.5rem 0;
+}
+
+.instructions li {
+  padding: 0.35rem 0;
+  padding-left: 1.5rem;
+  position: relative;
+}
+
+.instructions li:before {
+  content: '•';
+  position: absolute;
+  left: 0.5rem;
+  color: var(--accent);
+}
+
+.instructions a {
+  color: var(--accent);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.18s;
+}
+
+.instructions a:hover {
+  border-bottom-color: var(--accent);
+}
+
+.hint {
+  font-size: 0.75rem !important;
+  opacity: 0.6;
+  font-style: italic;
+  margin-top: 0.25rem !important;
+}
+
+.note {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: var(--radius);
+  padding: 1rem;
+  margin-top: 1.5rem;
+  font-size: 0.82rem;
+  line-height: 1.6;
+}
+
+.note strong {
+  color: var(--error);
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+/* ── Scrollbar ──────────────────────────────────────────────────────────── */
 ::-webkit-scrollbar       { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: #4a5568; }
 
-/* ── Responsive ──────────────────────────────────────────────────────────────────────────────────────────────────── */
+/* ── Responsive ──────────────────────────────────────────────────────────── */
 @media (max-width: 960px) {
   html, body { overflow: auto; }
   .app-layout {
@@ -287,6 +360,5 @@ kbd {
     height: auto;
   }
   .panel { min-height: 420px; border-right: none; border-bottom: 1px solid var(--border); }
-  .panel-preview { min-height: 550px; }
   .badges { flex-direction: column; gap: 0.25rem; }
 }

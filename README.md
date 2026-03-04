@@ -1,6 +1,6 @@
 # 📄 LaTeX DIN 5008 Brief Editor
 
-Online-Editor für Briefe nach **DIN 5008** – vollständig im Browser via **Go WebAssembly** + **SwiftLaTeX**.
+Online-Editor für Briefe nach **DIN 5008** mit **Go WebAssembly** für LaTeX-Template-Generierung.
 
 🔗 **[Live Demo → sstreichan.github.io/latex-din5008-editor](https://sstreichan.github.io/latex-din5008-editor/)**
 
@@ -9,34 +9,61 @@ Online-Editor für Briefe nach **DIN 5008** – vollständig im Browser via **Go
 
 ## Features
 
-- **100% Browser-basiert** – keine externen Server, keine API-Calls
 - **Go WebAssembly** – Formularlogik & LaTeX-Generierung läuft nativ im Browser
-- **SwiftLaTeX (WASM)** – Vollständiger PdfTeX-Compiler als WebAssembly
-- **CodeMirror Editor** – Syntax-Highlighting für LaTeX mit `Ctrl+Enter` zum Kompilieren
+- **CodeMirror Editor** – Syntax-Highlighting für LaTeX
 - **DIN 5008A Vorlage** – KOMA-Script `scrlttr2` mit `DIN5008A`-Option
-- **PDF Vorschau & Download** – direkt im Browser
-- **Offline-fähig** – funktioniert nach dem ersten Laden auch ohne Internet
+- **.tex Export** – Download der generierten LaTeX-Datei
+- **100% Datensouveränität** – Alle Daten bleiben lokal im Browser
 - **GitHub Pages** – vollständig statisch hostbar
+
+## PDF-Kompilierung
+
+Der Editor generiert LaTeX-Code, den Sie auf drei Arten zu PDF kompilieren können:
+
+### 1. Lokaler Compiler (empfohlen)
+
+Kompilieren Sie die heruntergeladene `.tex`-Datei mit Ihrer lokalen LaTeX-Installation:
+
+```bash
+pdflatex brief.tex
+```
+
+**Voraussetzung:** TeX Live, MiKTeX oder MacTeX
+
+### 2. Online-Dienste
+
+Laden Sie die `.tex`-Datei in einen dieser Dienste hoch:
+
+- [Overleaf](https://www.overleaf.com) (kostenlos, Account erforderlich)
+- [Papeeria](https://papeeria.com) (kostenlos)
+- [LaTeX Base](https://latexbase.com) (kein Account)
+
+### 3. Cloud-Compiler API
+
+Verwenden Sie einen dieser kostenlosen APIs (senden Daten an externe Server):
+
+- [latex.ytotech.com](https://latex.ytotech.com)
+- [LaTeX.Online](https://latexonline.cc)
+
+## Warum keine Browser-Kompilierung?
+
+**SwiftLaTeX** (LaTeX als WebAssembly) wäre technisch die ideale Lösung für eine vollständig browser-basierte Kompilierung. Allerdings:
+
+- Keine zuverlässige CDN-Distribution verfügbar
+- npm-Paket ist veraltet und nicht CDN-kompatibel
+- Selbst-Hosting würde ~50 MB WASM-Binary + TeX-Pakete erfordern
+
+Für maximale Datensouveränität empfehlen wir daher einen **lokalen Compiler**.
 
 ## Tech Stack
 
 | Komponente | Technologie |
 |---|---|
 | UI-Logik & Template | Go 1.22 → WebAssembly (`syscall/js`) |
-| LaTeX Kompilierung | SwiftLaTeX 1.5.1 (PdfTeX via WASM) |
 | LaTeX Editor | CodeMirror 5 (stex mode) |
 | Styling | Vanilla CSS (Dark Theme) |
 | Hosting | GitHub Pages |
 | CI/CD | GitHub Actions |
-
-## Warum keine externen Dienste?
-
-**SwiftLaTeX** ist ein vollständiger TeX-Compiler, der in WebAssembly kompiliert wurde [web:28][web:29]. Die gesamte LaTeX-Kompilierung erfolgt lokal im Browser des Benutzers – es werden keine Daten an externe Server gesendet. Dies garantiert:
-
-- ✅ **Volle Datensouveränität** – LaTeX-Dokumente verlassen niemals den Browser
-- ✅ **Offline-Nutzung** – funktioniert nach dem ersten Laden ohne Internet
-- ✅ **Keine API-Limits** – unbegrenzte Kompilierungen
-- ✅ **Schnelle Performance** – keine Netzwerk-Latenz
 
 ## Lokale Entwicklung
 
@@ -61,7 +88,7 @@ make clean
 ├── go.mod
 ├── Makefile
 ├── docs/
-│   ├── index.html               # Single-Page App (SwiftLaTeX Integration)
+│   ├── index.html               # Single-Page App
 │   ├── style.css                # Dark Theme
 │   ├── main.wasm                # (via GitHub Actions / make build)
 │   └── wasm_exec.js             # (via GitHub Actions / make build)
@@ -81,10 +108,6 @@ Sonderzeichen in Eingabefeldern (außer dem Brieftext) ggf. manuell escaped werd
 | `_` | `\_` | `~` | `\textasciitilde{}` |
 
 Im **Brieftext**-Feld können direkt LaTeX-Befehle verwendet werden.
-
-## Technische Details: SwiftLaTeX
-
-SwiftLaTeX basiert auf einer vollständigen WebAssembly-Portierung von **PdfTeX** und **XeTeX** [web:29]. Die Engine lädt beim ersten Start (~3-5 MB), danach ist die Kompilierung rein lokal. Das Projekt wird aktiv gepflegt und wird von vielen LaTeX-Editoren als Basis genutzt [web:28][web:31].
 
 ## Lizenz
 
